@@ -14,7 +14,7 @@
     sg_description: "Security Group allowing SSH and HTTP traffic"
 
     # EC2 Configuration
-    instance_name: "Ansible-Managed-Server"
+    instance_name: "ec2-Server"
     instance_type: "t2.micro"
     ami_id: "ami-0567589d25e06853e"       # Replace with a valid AMI ID for your region
     key_pair_name: "excersie"       # Replace with your existing AWS key pair name
