@@ -1,0 +1,62 @@
+---
+- name: ec2
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    # AWS Configuration
+    aws_region: "us-east-1"
+    vpc_id: "vpc-0e57b870dfce16536"      # Replace with your target VPC ID
+    
+    # Security Group Configuration
+    sg_name: "web-traffic-sg"
+    sg_description: "Security Group allowing SSH and HTTP traffic"
+
+    # EC2 Configuration
+    instance_name: "Ansible-Managed-Server"
+    instance_type: "t2.micro"
+    ami_id: "ami-0567589d25e06853e"       # Replace with a valid AMI ID for your region
+    key_pair_name: "excersie"       # Replace with your existing AWS key pair name
+
+  tasks:
+    - name: Create EC2 Security Group
+      amazon.aws.ec2_security_group:
+        name: "{{ sg_name }}"
+        description: "{{ sg_description }}"
+        vpc_id: "{{ vpc_id }}"
+        region: "{{ aws_region }}"
+        rules:
+          - proto: tcp
+            from_port: 22
+            to_port: 22
+            cidr_ip: 0.0.0.0/0
+            rule_desc: "Allow SSH"
+          - proto: tcp
+            from_port: 80
+            to_port: 80
+            cidr_ip: 0.0.0.0/0
+            rule_desc: "Allow HTTP"
+        state: present
+      register: ec2_sg
+
+    - name: Launch EC2 Instance
+      amazon.aws.ec2_instance:
+        name: "{{ instance_name }}"
+        key_name: "{{ key_pair_name }}"
+        instance_type: "{{ instance_type }}"
+        image_id: "{{ ami_id }}"
+        region: "{{ aws_region }}"
+        security_group: "{{ ec2_sg.group_id }}"
+        vpc_subnet_id: "subnet-0f5f259edd93cd839" # Replace with your target subnet ID
+        network:
+          assign_public_ip: true
+        wait: true
+        state: running
+      register: ec2_instance
+
+    - name: Display Instance Details
+      ansible.builtin.debug:
+        msg: >
+          Instance {{ ec2_instance.instances[0].instance_id }} has been created. 
+          Public IP address is {{ ec2_instance.instances[0].public_ip_address | default('Not Assigned') }}
